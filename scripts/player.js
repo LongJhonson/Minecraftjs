@@ -4,7 +4,7 @@ import { PointerLockControls } from "three/examples/jsm/Addons.js";
 export class Player {
   radius = 0.5;
   height = 1.75;
-  jumpSpeed = 10;
+  jumpSpeed = 8;
   onGround = false;
 
   maxSpeed = 10;
