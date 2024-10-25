@@ -1,5 +1,8 @@
 import * as THREE from "three";
 import { PointerLockControls } from "three/examples/jsm/Addons.js";
+import { blocks } from "./block.js";
+
+const CENTER_SCREEN = new THREE.Vector2();
 
 export class Player {
   radius = 0.5;
@@ -21,10 +24,20 @@ export class Player {
   controls = new PointerLockControls(this.camera, document.body);
   cameraHelper = new THREE.CameraHelper(this.camera);
 
+  raycaster = new THREE.Raycaster(
+    new THREE.Vector3(),
+    new THREE.Vector3(),
+    0,
+    3
+  );
+  selectedCoords = null;
+
+  activeBlockId = blocks.grass.id;
+
   constructor(scene) {
-    this.camera.position.set(32, 16, 32);
+    this.camera.position.set(16, 16, 16);
     scene.add(this.camera);
-    scene.add(this.cameraHelper);
+    // scene.add(this.cameraHelper);
     document.addEventListener("keydown", this.onKeyDown.bind(this));
     document.addEventListener("keyup", this.onKeyUp.bind(this));
 
@@ -33,7 +46,18 @@ export class Player {
       new THREE.CylinderGeometry(this.radius, this.radius, this.height, 16),
       new THREE.MeshBasicMaterial({ wireframe: true })
     );
-    scene.add(this.boundsHelper);
+    // scene.add(this.boundsHelper);
+
+    const selectionMaterial = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0.3,
+      color: 0xffffaa,
+    });
+
+    const selectionGeometry = new THREE.BoxGeometry(1.01, 1.01, 1.01);
+
+    this.selectionHelper = new THREE.Mesh(selectionGeometry, selectionMaterial);
+    scene.add(this.selectionHelper);
   }
 
   get worldVelocity() {
@@ -42,6 +66,40 @@ export class Player {
       new THREE.Euler(0, this.camera.rotation.y, 0)
     );
     return this.#worldVelocity;
+  }
+
+  update(world) {
+    this.updateRaycaster(world);
+  }
+
+  updateRaycaster(world) {
+    this.raycaster.setFromCamera(CENTER_SCREEN, this.camera);
+    const intersections = this.raycaster.intersectObject(world, true);
+
+    if (intersections.length > 0) {
+      const intersection = intersections[0];
+
+      //Get the position of the chunk that the block is container in
+      const chunk = intersection.object.parent;
+
+      //get tranformation matrix of the intersected block
+      const blockMatrix = new THREE.Matrix4();
+      intersection.object.getMatrixAt(intersection.instanceId, blockMatrix);
+
+      //extract the position from the blocks transformation matrix and store it in selectedCoords
+      this.selectedCoords = chunk.position.clone();
+      this.selectedCoords.applyMatrix4(blockMatrix);
+
+      if(this.activeBlockId !== blocks.empty.id) {
+        this.selectedCoords.add(intersection.normal);
+      }
+
+      this.selectionHelper.position.copy(this.selectedCoords);
+      this.selectionHelper.visible = true;
+    } else {
+      this.selectedCoords = null;
+      this.selectionHelper.visible = false;
+    }
   }
 
   applyWorldDeltaVelocity(dv) {
@@ -84,8 +142,17 @@ export class Player {
     if (!this.controls.isLocked) {
       this.controls.lock();
     }
-    console.log(event.code);
     switch (event.code) {
+      case "Digit0":
+      case "Digit1":
+      case "Digit2":
+      case "Digit3":
+      case "Digit4":
+      case "Digit5":
+        this.activeBlockId = Number(event.key);
+        console.log("active block id: ", event.key);
+        break;
+
       case "KeyW":
         this.input.z = this.maxSpeed;
         break;

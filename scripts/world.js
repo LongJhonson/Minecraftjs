@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { WorldChunk } from "./worldChunk";
+import { DataStore } from "./dataStore";
 
 export class World extends THREE.Group {
-
-    asyncLoading = true;
+  asyncLoading = true;
 
   drawDistance = 2;
 
@@ -18,16 +18,19 @@ export class World extends THREE.Group {
     },
   };
 
+  dataStore = new DataStore();
+
   constructor(seed = 0) {
     super();
     this.seed = seed;
   }
 
   generate() {
+    this.dataStore.clear();
     this.disposeChunks();
     for (let x = -this.drawDistance; x <= this.drawDistance; x++) {
       for (let z = -this.drawDistance; z <= this.drawDistance; z++) {
-        const chunk = new WorldChunk(this.chunkSize, this.params);
+        const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
         chunk.position.set(
           x * this.chunkSize.width,
           0,
@@ -45,7 +48,7 @@ export class World extends THREE.Group {
     const chunksToAdd = this.getChunksToAdd(visibleChunks);
     this.removeUnusedChunks(visibleChunks);
 
-    for(const chunk of chunksToAdd) {
+    for (const chunk of chunksToAdd) {
       this.generateChunk(chunk.x, chunk.z);
     }
   }
@@ -104,18 +107,14 @@ export class World extends THREE.Group {
   }
 
   generateChunk(x, z) {
-    const chunk = new WorldChunk(this.chunkSize, this.params);
-    chunk.position.set(
-      x * this.chunkSize.width,
-      0,
-      z * this.chunkSize.width
-    );
+    const chunk = new WorldChunk(this.chunkSize, this.params, this.dataStore);
+    chunk.position.set(x * this.chunkSize.width, 0, z * this.chunkSize.width);
     chunk.userData = { x, z };
 
     if (this.asyncLoading) {
-     requestIdleCallback(chunk.generate.bind(chunk), { timeout: 1000 }); 
-    }else{
-    chunk.generate();
+      requestIdleCallback(chunk.generate.bind(chunk), { timeout: 1000 });
+    } else {
+      chunk.generate();
     }
     this.add(chunk);
   }
@@ -162,5 +161,57 @@ export class World extends THREE.Group {
       }
     });
     this.clear();
+  }
+
+  addBlock(x, y, z, blockId) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.addBlock(coords.block.x, coords.block.y, coords.block.z, blockId);
+    }
+
+    //hide adjacent neighbors if they are now hidden
+    this.hideBlock(x - 1, y, z);
+    this.hideBlock(x + 1, y, z);
+    this.hideBlock(x, y - 1, z);
+    this.hideBlock(x, y + 1, z);
+    this.hideBlock(x, y, z - 1);
+    this.hideBlock(x, y, z + 1);
+  }
+
+  removeBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.removeBlock(coords.block.x, coords.block.y, coords.block.z);
+
+      //reveal adjacent neighbors if they are hidden
+      this.revealBlock(x - 1, y, z);
+      this.revealBlock(x + 1, y, z);
+      this.revealBlock(x, y - 1, z);
+      this.revealBlock(x, y + 1, z);
+      this.revealBlock(x, y, z - 1);
+      this.revealBlock(x, y, z + 1);
+    }
+  }
+
+  revealBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk) {
+      chunk.addBlockInstance(coords.block.x, coords.block.y, coords.block.z);
+    }
+  }
+
+  hideBlock(x, y, z) {
+    const coords = this.worldToChunkCoords(x, y, z);
+    const chunk = this.getChunk(coords.chunk.x, coords.chunk.z);
+
+    if (chunk && chunk.isBlockObscured(coords.block.x, coords.block.y, coords.block.z)) {
+      chunk.deleteBlockInstance(coords.block.x, coords.block.y, coords.block.z);
+    }
   }
 }
