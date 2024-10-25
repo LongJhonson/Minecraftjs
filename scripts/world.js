@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { WorldChunk } from "./worldChunk";
 import { DataStore } from "./dataStore";
+import { max } from "three/webgpu";
 
 export class World extends THREE.Group {
   asyncLoading = true;
@@ -13,9 +14,26 @@ export class World extends THREE.Group {
     seed: 0,
     terrain: {
       scale: 30,
-      magnitude: 0.1,
-      offset: 0.2,
+      magnitude: 10,
+      offset: 4,
+      waterOffset: 5
     },
+    trees: {
+      trunk:{
+        minHeight: 4,
+        maxHeight: 7,
+      },
+      canopy:{
+        minRadius: 2,
+        maxRadius: 4,
+        density: 0.5, // vary btween 0.0 and 1.0
+      },
+      frequency: 0.01
+    },
+    clouds: {
+      scale: 30,
+      density: 0.2
+    }
   };
 
   dataStore = new DataStore();

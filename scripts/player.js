@@ -36,6 +36,7 @@ export class Player {
 
   constructor(scene) {
     this.camera.position.set(16, 16, 16);
+    this.camera.layers.enable(1);
     scene.add(this.camera);
     // scene.add(this.cameraHelper);
     document.addEventListener("keydown", this.onKeyDown.bind(this));
@@ -58,6 +59,8 @@ export class Player {
 
     this.selectionHelper = new THREE.Mesh(selectionGeometry, selectionMaterial);
     scene.add(this.selectionHelper);
+
+    this.raycaster.layers.set(0);
   }
 
   get worldVelocity() {
@@ -90,7 +93,7 @@ export class Player {
       this.selectedCoords = chunk.position.clone();
       this.selectedCoords.applyMatrix4(blockMatrix);
 
-      if(this.activeBlockId !== blocks.empty.id) {
+      if (this.activeBlockId !== blocks.empty.id) {
         this.selectedCoords.add(intersection.normal);
       }
 
@@ -149,6 +152,10 @@ export class Player {
       case "Digit3":
       case "Digit4":
       case "Digit5":
+      case "Digit6":
+      case "Digit7":
+      case "Digit8":
+      case "Digit9":
         this.activeBlockId = Number(event.key);
         console.log("active block id: ", event.key);
         break;
