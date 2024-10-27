@@ -177,6 +177,7 @@ export class WorldChunk extends THREE.Group {
     };
 
     let offset = this.params.trees.canopy.maxRadius;
+    // let rng = new RNG(this.params.seed);
 
     for (let x = offset; x < this.size.width - offset; x++) {
       for (let z = offset; z < this.size.width - offset; z++) {

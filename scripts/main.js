@@ -6,6 +6,7 @@ import { createUi } from "./ui";
 import { Player } from "./player";
 import { Physics } from "./physics";
 import { blocks } from "./block";
+import { ModelLoader } from "./modelLoader";
 
 const stats = new Stats();
 document.body.append(stats.dom);
@@ -42,6 +43,11 @@ const player = new Player(scene);
 
 const physics = new Physics(scene);
 
+const modelLoader = new ModelLoader();
+modelLoader.loadModels((models) => {
+  player.tool.setMesh(models.pickaxe);
+});
+
 const sun = new THREE.DirectionalLight();
 
 function setupLights() {
@@ -75,6 +81,7 @@ function onMouseDown(event) {
         player.selectedCoords.y,
         player.selectedCoords.z
       );
+      player.tool.startAnimation();
     } else {
       console.log("adding block at ", player.selectedCoords);
       world.addBlock(
