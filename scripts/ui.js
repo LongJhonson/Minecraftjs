@@ -19,6 +19,14 @@ export function createUi(scene, world, player) {
   terrainFolder.add(world.params.terrain, "offset", 0, 32, 1).name("Offset");
   terrainFolder.add(world.params.terrain, "waterOffset", 0, 32, 1).name("Water Offset");
 
+  const biomesFolder = terrainFolder.addFolder("Biomes").close();
+  biomesFolder.add(world.params.biomes, "scale", 10, 500).name("Temperature Scale");
+  biomesFolder.add(world.params.biomes.variation, "amplitude", 0, 1).name("Variation Amplitude");
+  biomesFolder.add(world.params.biomes.variation, "scale", 10, 500).name("Variation Scale");
+  biomesFolder.add(world.params.biomes, "tundraToTemperate", 0, 1).name("Tundra -> Temperate");
+  biomesFolder.add(world.params.biomes, "temperateToJungle", 0, 1).name("Temperate -> Jungle");
+  biomesFolder.add(world.params.biomes, "jungleToDesert", 0, 1).name("Jungle -> Desert");
+
   const resourcesFolder = terrainFolder.addFolder("Resources").close();
   resources.forEach((resource) => {
     const resourceFolder = resourcesFolder.addFolder(resource.name);
